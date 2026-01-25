@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from app.database.connection import Base
+from database.connection import Base
 
 class Agent(Base):
     __tablename__ = "agents_terrain"

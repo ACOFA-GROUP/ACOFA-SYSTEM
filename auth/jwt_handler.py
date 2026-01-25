@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from app.config import settings
+from config import settings
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()

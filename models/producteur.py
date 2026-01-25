@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Integer, Boolean, Float, DateTime, Foreig
 from sqlalchemy.dialects.postgresql import UUID
 from geoalchemy2 import Geography
 import uuid
-from app.database.connection import Base
+from database.connection import Base
 
 class Producteur(Base):
     __tablename__ = "producteurs"

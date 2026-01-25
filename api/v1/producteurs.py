@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
-from app.database.connection import get_db
-from app.schemas.producteur import ProducteurCreate, ProducteurResponse
-from app.models.producteur import Producteur
-from app.auth.dependencies import get_current_user, require_agent
+from database.connection import get_db
+from schemas.producteur import ProducteurCreate, ProducteurResponse
+from models.producteur import Producteur
+from auth.dependencies import get_current_user, require_agent
 
 router = APIRouter()
 
