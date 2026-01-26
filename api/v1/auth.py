@@ -14,7 +14,7 @@ router = APIRouter()
 async def agent_login(credentials: AgentLogin, db: Session = Depends(get_db)):
     """
     Login pour agents ACOFA
-    - Email + Password
+    - username + Password
     - Retourne JWT token
     """
     agent = db.query(Agent).filter(Agent.email == credentials.username).first()
