@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 
 class AgentLogin(BaseModel):
-    username: EmailStr
+    username: str
     password: str
 
 class ProducteurLogin(BaseModel):
