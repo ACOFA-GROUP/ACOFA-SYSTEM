@@ -17,7 +17,7 @@ async def agent_login(credentials: AgentLogin, db: Session = Depends(get_db)):
     - Email + Password
     - Retourne JWT token
     """
-    agent = db.query(Agent).filter(Agent.email == credentials.email).first()
+    agent = db.query(Agent).filter(Agent.email == credentials.username).first()
     
     if not agent:
         raise HTTPException(
