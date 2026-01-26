@@ -19,5 +19,3 @@ class Agent(Base):
     appareil_mobile = Column(String(100))
     identifiant_appareil = Column(String(200))
     derniere_synchronisation = Column(DateTime)
-    date_creation = Column(DateTime, server_default=func.now())
-    date_modification = Column(DateTime, server_default=func.now(), onupdate=func.now())
