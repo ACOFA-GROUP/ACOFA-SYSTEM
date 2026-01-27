@@ -96,3 +96,10 @@ async def verify_token(current_user: dict = Depends(get_current_user)):
         "user_id": current_user["user_id"],
         "role": current_user["role"]
     }
+@router.get("/debug/db")
+def debug_db(db: Session = Depends(get_db)):
+    result = db.execute("SELECT current_database(), current_schema()").fetchone()
+    return {
+        "database": result[0],
+        "schema": result[1]
+    }
