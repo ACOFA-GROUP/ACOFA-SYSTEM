@@ -1,4 +1,3 @@
-from models.agent import Agent
-from models.producteur import Producteur
+from database.connection import get_db, Base, engine, SessionLocal
 
-__all__ = ["Agent", "Producteur"]
+__all__ = ["get_db", "Base", "engine", "SessionLocal"]
