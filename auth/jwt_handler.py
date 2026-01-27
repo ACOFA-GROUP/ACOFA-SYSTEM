@@ -4,7 +4,7 @@ from config import settings
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    # Correction : on utilise datetime.now(timezone.utc) au lieu de utcnow()
+    # On utilise timezone.utc pour éviter le crash sur Python 3.12+
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRATION_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
