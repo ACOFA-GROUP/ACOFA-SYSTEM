@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database.connection import get_db
 from schemas.auth import AgentLogin, ProducteurLogin, TokenResponse
