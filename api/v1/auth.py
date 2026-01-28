@@ -6,8 +6,7 @@ import models.agent as agent_models
 import models.producteur as prod_models
 import schemas 
 from auth.jwt_handler import create_access_token
-from auth.hash_handler import verify_password, get_password_hash
-
+from auth.password import verify_password, get_password_hash
 router = APIRouter()
 
 # --- 1. LOGIN AGENT (Image 10) ---
