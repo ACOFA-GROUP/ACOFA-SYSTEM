@@ -10,7 +10,7 @@ from auth.hash_handler import verify_password, get_password_hash
 
 router = APIRouter()
 
-# --- LOGIN AGENT (Image 10) ---
+# --- 1. LOGIN AGENT (Image 10) ---
 @router.post("/agent/login")
 def login_agent(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     agent = db.query(agent_models.Agent).filter(agent_models.Agent.email == form_data.username).first()
@@ -29,13 +29,13 @@ def login_agent(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         "name": agent.nom_complet
     }
 
-# --- LOGIN PRODUCTEUR (Image 12 - CORRIGÉ) ---
+# --- 2. LOGIN PRODUCTEUR (Image 12) ---
 @router.post("/producteur/login")
 def login_producteur(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Recherche par téléphone comme dans ton modèle (Image 11)
+    # On cherche par téléphone (Image 11)
     producteur = db.query(prod_models.Producteur).filter(prod_models.Producteur.telephone == form_data.username).first()
     
-    # Comparaison sécurisée du code_pin (Image 12)
+    # Correction Erreur 500 : Comparaison sécurisée en texte (str)
     if not producteur or str(producteur.code_pin) != str(form_data.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -50,7 +50,7 @@ def login_producteur(form_data: OAuth2PasswordRequestForm = Depends(), db: Sessi
         "name": producteur.nom_complet
     }
 
-# --- CRÉATION AGENT (Image 11) ---
+# --- 3. REGISTER AGENT (Image 11) ---
 @router.post("/agent/register", response_model=schemas.Agent)
 def register_agent(agent_in: schemas.AgentCreate, db: Session = Depends(get_db)):
     db_agent = db.query(agent_models.Agent).filter(agent_models.Agent.email == agent_in.email).first()
@@ -69,7 +69,7 @@ def register_agent(agent_in: schemas.AgentCreate, db: Session = Depends(get_db))
     db.refresh(new_agent)
     return new_agent
 
-# --- CRÉATION PRODUCTEUR (Image 13) ---
+# --- 4. REGISTER PRODUCTEUR (Image 13) ---
 @router.post("/producteur/register", response_model=schemas.Producteur)
 def register_producteur(prod_in: schemas.ProducteurCreate, db: Session = Depends(get_db)):
     db_prod = db.query(prod_models.Producteur).filter(prod_models.Producteur.telephone == prod_in.telephone).first()
