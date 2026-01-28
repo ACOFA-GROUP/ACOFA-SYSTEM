@@ -1,57 +1,80 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from database import get_db
-import models.agent as models
-import schemas 
+
+from database.connection import get_db
+from schemas.auth import AgentLogin, ProducteurLogin, TokenResponse
+from models.agent import Agent
+from models.producteur import Producteur
 from auth.jwt_handler import create_access_token
-from auth.hash_handler import verify_password
+from auth.password import verify_password
+from auth.dependencies import get_current_user
 
 router = APIRouter()
 
-@router.post("/agent/login")
-def login_agent(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # 1. Recherche de l'agent par email (Image 5 et 14)
-    agent = db.query(models.Agent).filter(models.Agent.email == form_data.username).first()
-    
-    # 2. Vérification du mot de passe (Image 15 pour la colonne mot_de_passe_hash)
-    if not agent or not verify_password(form_data.password, agent.mot_de_passe_hash):
+@router.post("/agent/login", response_model=TokenResponse)
+async def agent_login(credentials: AgentLogin, db: Session = Depends(get_db)):
+    agent = db.query(Agent).filter(Agent.email == credentials.username).first()
+
+    if not agent:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou mot de passe incorrect",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Email ou mot de passe incorrect"
         )
 
-    # 3. Génération du Token
-    token_data = {"sub": agent.email, "role": "agent", "user_id": str(agent.id)}
-    access_token = create_access_token(data=token_data)
-    
-    return {
-        "access_token": access_token, 
-        "token_type": "bearer",
-        "user_id": agent.id,
+    if not agent.mot_de_passe_hash or not verify_password(credentials.password, agent.mot_de_passe_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email ou mot de passe incorrect"
+        )
+
+    token_data = {
+        "user_id": str(agent.id),
+        "role": "agent",
+        "email": agent.email,
         "name": agent.nom_complet
     }
 
-@router.post("/producteur/login")
-def login_producteur(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Utilise le modèle Producteur (Image 4)
-    import models.producteur as prod_models
-    producteur = db.query(prod_models.Producteur).filter(prod_models.Producteur.telephone == form_data.username).first()
-    
-    if not producteur or str(producteur.code_pin) != str(form_data.password):
+    token = create_access_token(token_data)
+
+    return TokenResponse(
+        access_token=token,
+        user_id=str(agent.id),
+        role="agent",
+        name=agent.nom_complet
+    )
+
+@router.post("/producteur/login", response_model=TokenResponse)
+async def producteur_login(credentials: ProducteurLogin, db: Session = Depends(get_db)):
+    producteur = db.query(Producteur).filter(Producteur.telephone == credentials.telephone).first()
+
+    if not producteur:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Téléphone ou code PIN incorrect",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Téléphone ou code PIN incorrect"
         )
 
-    token_data = {"sub": producteur.telephone, "role": "producteur", "user_id": str(producteur.id)}
-    access_token = create_access_token(data=token_data)
+    if not producteur.code_pin or str(producteur.code_pin) != str(credentials.code_pin):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Téléphone ou code PIN incorrect"
+        )
 
-    return {
-        "access_token": access_token, 
-        "token_type": "bearer",
-        "user_id": producteur.id,
-        "name": producteur.nom
+    token_data = {
+        "user_id": str(producteur.id),
+        "role": "producteur",
+        "telephone": producteur.telephone,
+        "name": producteur.nom_complet
     }
+
+    token = create_access_token(token_data)
+
+    return TokenResponse(
+        access_token=token,
+        user_id=str(producteur.id),
+        role="producteur",
+        name=producteur.nom_complet
+    )
+
+@router.get("/verify")
+async def verify_token(current_user: dict = Depends(get_current_user)):
+    return {"valid": True, "user_id": current_user["user_id"], "role": current_user["role"]}
