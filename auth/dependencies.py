@@ -1,38 +1,49 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
-from auth.jwt_handler import decode_access_token
-from database.connection import get_db
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import logging
 
+from auth.jwt_handler import decode_access_token
+
+logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-):
-    token = credentials.credentials
-    payload = decode_access_token(token)
-    
-    if payload is None:
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    try:
+        token = credentials.credentials
+        payload = decode_access_token(token)
+
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token invalide"
+            )
+
+        user_id = payload.get("user_id")
+        role = payload.get("role")
+
+        if not user_id or not role:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token invalide (données manquantes)"
+            )
+
+        return payload
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("CRASH get_current_user: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token"
+            detail="Token invalide"
         )
-    
-    return payload
 
-async def require_agent(current_user: dict = Depends(get_current_user)):
+
+def require_agent(current_user: dict = Depends(get_current_user)) -> dict:
     if current_user.get("role") != "agent":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Agent access required"
-        )
-    return current_user
-
-async def require_producteur(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != "producteur":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Producteur access required"
+            detail="Accès refusé (agent requis)"
         )
     return current_user
