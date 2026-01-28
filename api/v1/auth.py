@@ -37,7 +37,8 @@ async def agent_login(credentials: AgentLogin, db: Session = Depends(get_db)):
     token = create_access_token(token_data)
 
     return TokenResponse(
-        access_token=token,
+        access_token=token
+        token_type="bearer",
         user_id=str(agent.id),
         role="agent",
         name=agent.nom_complet
@@ -69,7 +70,8 @@ async def producteur_login(credentials: ProducteurLogin, db: Session = Depends(g
     token = create_access_token(token_data)
 
     return TokenResponse(
-        access_token=token,
+        access_token=token
+        token_type="bearer",
         user_id=str(producteur.id),
         role="producteur",
         name=producteur.nom_complet
