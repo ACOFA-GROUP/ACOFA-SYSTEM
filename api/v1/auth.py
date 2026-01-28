@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 # Correction : on importe 'schema' sans le 's' car c'est le nom de ton fichier
-import schema 
+import schemas 
 from auth.jwt_handler import create_access_token
 from auth.hash_handler import verify_password
 
