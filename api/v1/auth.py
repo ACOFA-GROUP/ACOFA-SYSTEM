@@ -68,33 +68,45 @@ async def producteur_login(
     credentials: LoginRequest,
     db: Session = Depends(get_db),
 ):
-    producteur = db.query(Producteur).filter(
-        Producteur.telephone == credentials.username
-    ).first()
+    try:
+        producteur = db.query(Producteur).filter(
+            Producteur.telephone == credentials.username
+        ).first()
 
-    if not producteur:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Téléphone ou code PIN incorrect",
+        if not producteur:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Téléphone ou code PIN incorrect",
+            )
+
+        # Comparaison PIN (string-safe)
+        if producteur.code_pin is None or str(producteur.code_pin) != str(credentials.password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Téléphone ou code PIN incorrect",
+            )
+
+        # Sécurise nom_complet au cas où c’est NULL
+        name = producteur.nom_complet if getattr(producteur, "nom_complet", None) else "Producteur"
+
+        token_data = {
+            "user_id": str(producteur.id),
+            "role": "producteur",
+            "name": name,
+        }
+
+        return TokenResponse(
+            access_token=create_access_token(token_data),
+            token_type="bearer",
+            user_id=str(producteur.id),
+            role="producteur",
+            name=name,
         )
 
-    # Comparaison PIN (string-safe)
-    if producteur.code_pin is None or str(producteur.code_pin) != str(credentials.password):
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Téléphone ou code PIN incorrect",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur producteur_login: {type(e).__name__}: {str(e)}",
         )
-
-    token_data = {
-        "user_id": str(producteur.id),
-        "role": "producteur",
-        "name": producteur.nom_complet,
-    }
-
-    return TokenResponse(
-        access_token=create_access_token(token_data),
-        token_type="bearer",
-        user_id=str(producteur.id),
-        role="producteur",
-        name=producteur.nom_complet,
-    )
