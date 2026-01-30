@@ -1,28 +1,41 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 
-from database.connection import get_db  # adapte si chez toi c'est database import get_db
-from schemas.auth import TokenResponse  # ton schema TokenResponse
+from database.connection import get_db
+from schemas.auth import TokenResponse
 from models.agent import Agent
 from models.producteur import Producteur
 from auth.jwt_handler import create_access_token
-from auth.password import verify_password  # verify_password(password_plain, hashed)
+from auth.password import verify_password
 
 router = APIRouter()
 
-# -------------------------
-# LOGIN AGENT (Swagger: username=email, password=motdepasse)
-# -------------------------
+
+# =========================
+# SCHEMA LOGIN JSON (AGENT)
+# =========================
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+# =========================
+# LOGIN AGENT (JSON)
+# =========================
 @router.post("/agent/login", response_model=TokenResponse)
 async def agent_login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    credentials: LoginRequest,
     db: Session = Depends(get_db)
 ):
-    # Swagger envoie: username + password
-    agent = db.query(Agent).filter(Agent.email == form_data.username).first()
+    agent = (
+        db.query(Agent)
+        .filter(Agent.email == credentials.username)
+        .first()
+    )
 
-    if not agent or not verify_password(form_data.password, agent.mot_de_passe_hash):
+    if not agent or not verify_password(credentials.password, agent.mot_de_passe_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou mot de passe incorrect"
@@ -43,16 +56,19 @@ async def agent_login(
     )
 
 
-# -------------------------
-# LOGIN PRODUCTEUR (Swagger: username=telephone, password=code_pin)
-# -------------------------
+# =========================
+# LOGIN PRODUCTEUR (INCHANGÉ – FORM DATA)
+# =========================
 @router.post("/producteur/login", response_model=TokenResponse)
 async def producteur_login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    # username = telephone, password = code_pin
-    producteur = db.query(Producteur).filter(Producteur.telephone == form_data.username).first()
+    producteur = (
+        db.query(Producteur)
+        .filter(Producteur.telephone == form_data.username)
+        .first()
+    )
 
     if not producteur:
         raise HTTPException(
@@ -60,7 +76,6 @@ async def producteur_login(
             detail="Téléphone ou code PIN incorrect"
         )
 
-    # Comparaison safe en string
     if producteur.code_pin is None or str(producteur.code_pin) != str(form_data.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
