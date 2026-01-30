@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 from pydantic import BaseModel
 
 from database.connection import get_db
@@ -69,9 +69,20 @@ async def producteur_login(
     db: Session = Depends(get_db),
 ):
     try:
-        producteur = db.query(Producteur).filter(
-            Producteur.telephone == credentials.username
-        ).first()
+        # ✅ IMPORTANT: on charge uniquement les colonnes nécessaires
+        producteur = (
+            db.query(Producteur)
+            .options(
+                load_only(
+                    Producteur.id,
+                    Producteur.telephone,
+                    Producteur.code_pin,
+                    Producteur.nom_complet
+                )
+            )
+            .filter(Producteur.telephone == credentials.username)
+            .first()
+        )
 
         if not producteur:
             raise HTTPException(
@@ -79,14 +90,12 @@ async def producteur_login(
                 detail="Téléphone ou code PIN incorrect",
             )
 
-        # Comparaison PIN (string-safe)
         if producteur.code_pin is None or str(producteur.code_pin) != str(credentials.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Téléphone ou code PIN incorrect",
             )
 
-        # Sécurise nom_complet au cas où c’est NULL
         name = producteur.nom_complet if getattr(producteur, "nom_complet", None) else "Producteur"
 
         token_data = {
