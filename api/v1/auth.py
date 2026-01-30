@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from database.connection import get_db  # adapte si chez toi c'est database import get_db
-from schemas.auth import TokenResponse  # ton schema TokenResponse
+from database.connection import get_db
+from schemas.auth import TokenResponse
 from models.agent import Agent
 from models.producteur import Producteur
 from auth.jwt_handler import create_access_token
@@ -14,7 +13,7 @@ router = APIRouter()
 
 
 # =========================
-# SCHEMA LOGIN JSON
+# SCHEMA LOGIN (STANDARD)
 # =========================
 class LoginRequest(BaseModel):
     username: str
@@ -22,17 +21,23 @@ class LoginRequest(BaseModel):
 
 
 # =========================
-# LOGIN AGENT (JSON)
+# LOGIN AGENT
+# username = email
+# password = mot de passe
 # =========================
 @router.post("/agent/login", response_model=TokenResponse)
 async def agent_login(
     credentials: LoginRequest,
     db: Session = Depends(get_db),
 ):
-    # username = email, password = mot de passe
-    agent = db.query(Agent).filter(Agent.email == credentials.username).first()
+    agent = db.query(Agent).filter(
+        Agent.email == credentials.username
+    ).first()
 
-    if not agent or not verify_password(credentials.password, agent.mot_de_passe_hash):
+    if not agent or not verify_password(
+        credentials.password,
+        agent.mot_de_passe_hash
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou mot de passe incorrect",
@@ -54,19 +59,18 @@ async def agent_login(
 
 
 # =========================
-# LOGIN PRODUCTEUR (JSON)
+# LOGIN PRODUCTEUR
+# username = telephone
+# password = code PIN
 # =========================
 @router.post("/producteur/login", response_model=TokenResponse)
 async def producteur_login(
     credentials: LoginRequest,
     db: Session = Depends(get_db),
 ):
-    # username = telephone, password = code_pin
-    producteur = (
-        db.query(Producteur)
-        .filter(Producteur.telephone == credentials.username)
-        .first()
-    )
+    producteur = db.query(Producteur).filter(
+        Producteur.telephone == credentials.username
+    ).first()
 
     if not producteur:
         raise HTTPException(
@@ -74,7 +78,7 @@ async def producteur_login(
             detail="Téléphone ou code PIN incorrect",
         )
 
-    # Comparaison safe en string
+    # Comparaison PIN (string-safe)
     if producteur.code_pin is None or str(producteur.code_pin) != str(credentials.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
