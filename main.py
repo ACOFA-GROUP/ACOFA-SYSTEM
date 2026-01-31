@@ -11,19 +11,15 @@ docs_url=”/docs”,
 redoc_url=”/redoc”
 )
 
-# Configuration CORS - CORRIGÉ POUR FONCTIONNER
+# Configuration CORS - SEULE MODIFICATION ICI
 
 app.add_middleware(
 CORSMiddleware,
-allow_origins=[
-“http://localhost:3000”,
-“http://localhost:5173”,
-“https://acofa-system-production-c024.up.railway.app”,
-“*”
-],
+allow_origins=[”*”],
 allow_credentials=True,
 allow_methods=[”*”],
 allow_headers=[”*”],
+expose_headers=[”*”],  # <– AJOUT DE CETTE LIGNE
 )
 
 # Middleware temps de réponse
