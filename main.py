@@ -19,7 +19,7 @@ allow_origins=[”*”],
 allow_credentials=True,
 allow_methods=[”*”],
 allow_headers=[”*”],
-expose_headers=[”*”],  # <– AJOUT DE CETTE LIGNE
+expose_headers=[”*”],  # <- AJOUT DE CETTE LIGNE
 )
 
 # Middleware temps de réponse
@@ -57,9 +57,11 @@ from sqlalchemy import text
 from database.connection import SessionLocal
 
 ```
+    """
     db = SessionLocal()
     db.execute(text("SELECT 1"))
     db.close()
+    """
     
     return {
         "status": "healthy",
@@ -75,3 +77,6 @@ except Exception as e:
         }
     )
 ```
+
+“””
+“””
